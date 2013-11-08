@@ -63,37 +63,7 @@ class FacebookStrategy extends OpauthStrategy{
 			parse_str($response, $results);
 
 			if (!empty($results) && !empty($results['access_token'])){
-				$me = $this->me($results['access_token']);
-
-				$this->auth = array(
-					'provider' => 'Facebook',
-					'uid' => $me->id,
-					'info' => array(
-						'name' => $me->name,
-						'image' => 'https://graph.facebook.com/'.$me->id.'/picture?type=square'
-					),
-					'credentials' => array(
-						'token' => $results['access_token'],
-						'expires' => date('c', time() + $results['expires'])
-					),
-					'raw' => $me
-				);
-				
-				if (!empty($me->email)) $this->auth['info']['email'] = $me->email;
-				if (!empty($me->username)) $this->auth['info']['nickname'] = $me->username;
-				if (!empty($me->first_name)) $this->auth['info']['first_name'] = $me->first_name;
-				if (!empty($me->last_name)) $this->auth['info']['last_name'] = $me->last_name;
-				if (!empty($me->location)) $this->auth['info']['location'] = $me->location->name;
-				if (!empty($me->link)) $this->auth['info']['urls']['facebook'] = $me->link;
-				if (!empty($me->website)) $this->auth['info']['urls']['website'] = $me->website;
-				
-				/**
-				 * Missing optional info values
-				 * - description
-				 * - phone: not accessible via Facebook Graph API
-				 */
-				
-				$this->callback();
+				$this->processToken($results['access_token'], $results['expires']);
 			}
 			else{
 				$error = array(
@@ -117,6 +87,40 @@ class FacebookStrategy extends OpauthStrategy{
 			$this->errorCallback($error);
 		}
 	}
+
+    public function processToken($accessToken, $tokenExpires = null) {
+        $me = $this->me($accessToken);
+
+        $this->auth = array(
+            'provider' => 'Facebook',
+            'uid' => $me->id,
+            'info' => array(
+                'name' => $me->name,
+                'image' => 'https://graph.facebook.com/'.$me->id.'/picture?type=square'
+            ),
+            'credentials' => array(
+                'token' => $accessToken,
+                'expires' => date('c', time() + $tokenExpires)
+            ),
+            'raw' => $me
+        );
+
+        if (!empty($me->email)) $this->auth['info']['email'] = $me->email;
+        if (!empty($me->username)) $this->auth['info']['nickname'] = $me->username;
+        if (!empty($me->first_name)) $this->auth['info']['first_name'] = $me->first_name;
+        if (!empty($me->last_name)) $this->auth['info']['last_name'] = $me->last_name;
+        if (!empty($me->location)) $this->auth['info']['location'] = $me->location->name;
+        if (!empty($me->link)) $this->auth['info']['urls']['facebook'] = $me->link;
+        if (!empty($me->website)) $this->auth['info']['urls']['website'] = $me->website;
+
+        /**
+         * Missing optional info values
+         * - description
+         * - phone: not accessible via Facebook Graph API
+         */
+
+        $this->callback();
+    }
 	
 	/**
 	 * Queries Facebook Graph API for user info
